@@ -22,9 +22,9 @@ module result_buffer import calculator_pkg::*; (
             internal_buffer <= 0;
         end else begin
             if (loc_sel) begin
-                [MEM_WORD_SIZE - 1 : 32]buffer_o <= result_i;
+                buffer_o[MEM_WORD_SIZE - 1 : 32] <= result_i;
             end else begin
-                [31 : 0]buffer_o <= result_i;
+                buffer_o[31 : 0] <= result_i;
             end
             //Place result_i into buffer based on loc_sel
         end
