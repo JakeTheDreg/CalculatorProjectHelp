@@ -4,7 +4,8 @@
 * 
 * synchronous active high reset on posedge clk
 */
-module result_buffer import calculator_pkg::*; (
+import calculator_pkg::*;
+module result_buffer  (
     input logic clk_i,                              //clock signal
     input logic rst_i,                              //reset signal
 
