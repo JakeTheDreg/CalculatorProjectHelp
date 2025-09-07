@@ -8,9 +8,10 @@ import calculator_pkg::*;
 module result_buffer  (
     input logic clk_i,                              //clock signal
     input logic rst_i,                              //reset signal
-
+    
     input logic [DATA_W-1 : 0] result_i,       //result from ALU
     input logic loc_sel,                            //mux control signal
+
     output logic [MEM_WORD_SIZE-1 : 0] buffer_o   //64-bit output of buffer
 );
 

@@ -2,7 +2,8 @@
  * This top_level module integrates the controller, memory, adder, and result buffer to form a complete calculator system.
  * It handles memory reads/writes, arithmetic operations, and result buffering.
  */
-module top_lvl import calculator_pkg::*; (
+import calculator_pkg::*;
+module top_lvl (
     input  logic                 clk,
     input  logic                 rst,
 
@@ -11,11 +12,26 @@ module top_lvl import calculator_pkg::*; (
     input  logic [ADDR_W-1:0]    read_end_addr,
     input  logic [ADDR_W-1:0]    write_start_addr,
     input  logic [ADDR_W-1:0]    write_end_addr
+
+    //controller wires
+    logic write, 
+    logic read;
+    logic [ADDR_W-1:0] w_addr, 
+    logic [ADDR_W-1:0] r_addr;
+    logic [MEM_WORD_SIZE-1:0] w_data, 
+    logic [MEM_WORD_SIZE-1:0] r_data;
+    logic [DATA_W-1:0] op_a, 
+    logic [DATA_W-1:0] op_b;
+    logic [MEM_WORD_SIZE-1:0] buff_result;
+
+    //SRAM wire
+    logic wmask0 = 4'hF;
     
 );
 
     //Any wires, combinational assigns, etc should go at the top for visibility
-   
+
+    
     //TODO: Finish instantiation of your controller module
 	controller u_ctrl (
   //inputs
@@ -25,16 +41,16 @@ module top_lvl import calculator_pkg::*; (
   .read_end_addr(read_end_addr),
   .write_start_addr(write_start_addr),
   .write_end_addr(write_end_addr),
-  .r_data(),
-  .buff_result(),
+  .r_data(r_data),
+  .buff_result(buff_result),
 
   //outputs
-  .write(),
-  .w_addr(),
-  .w_data(),
-  .buffer_control(),  //1 = upper, 0= lower
-  .op_a(),
-  .op_b(),
+  .write(write),
+  .w_addr(w_addr),
+  .w_data(w.data),
+  .buffer_control(buffer_control),  //1 = upper, 0= lower
+  .op_a(op_a),
+  .op_b(op_b),
 
 
   );
@@ -59,32 +75,32 @@ module top_lvl import calculator_pkg::*; (
   	
       sky130_sram_2kbyte_1rw1r_32x512_8 sram_A (
         .clk0   (clk),  
-        .csb0   (),
-        .web0   (), 
-        .wmask0 (), 
-        .addr0  (), 
-        .din0   (),
-        .dout0  (), 
+        .csb0   (~(read | write)),
+        .web0   (~write), 
+        .wmask0 (wmask0), 
+        .addr0  (w_addr), //maybe r_addr 
+        .din0   (w_data),
+        .dout0  (), //leave blank
         .clk1   (clk), 
-        .csb1   (), 
-        .addr1  (), 
-        .dout1  () 
+        .csb1   (~read), 
+        .addr1  (r_addr), 
+        .dout1  (r_data) 
     );
 
   
     //TODO: Instantiate the second SRAM for the lower half of the memory.
     sky130_sram_2kbyte_1rw1r_32x512_8 sram_B (
         .clk0   (clk),  
-        .csb0   (),
-        .web0   (), 
-        .wmask0 (), 
-        .addr0  (), 
-        .din0   (),
-        .dout0  (), 
+        .csb0   (~(read | write)),
+        .web0   (~write), 
+        .wmask0 (wmask0), 
+        .addr0  (w_addr), //maybe r_addr 
+        .din0   (w_data),
+        .dout0  (), //leave blank
         .clk1   (clk), 
-        .csb1   (), 
-        .addr1  (), 
-        .dout1  () 
+        .csb1   (~read), 
+        .addr1  (r_addr), 
+        .dout1  (r_data) 
     );
   	
   	//TODO: Finish instantiation of your adder module
@@ -98,9 +114,9 @@ module top_lvl import calculator_pkg::*; (
     result_buffer u_resbuf (
       .clk0(clk),
       
-      .result_i(), //input from adder
-      .loc_sel(),  //input
-      .buffer_o()  //output to sram
+      .result_i(sum_o), //input from adder
+      .loc_sel(buffer_control),  //input
+      .buffer_o(w_data)  //output to sram
     );
 
 endmodule

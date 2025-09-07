@@ -1,4 +1,9 @@
-module controller import calculator_pkg::*;(
+/*
+* this contoller module controlls the flow of the FSM giving instructions based on the state the machine is in. 
+* gives an overview of the function of the machine.
+*/
+import calculator_pkg::*;
+module controller (
   	input  logic              clk_i,
     input  logic              rst_i,
   
@@ -8,27 +13,25 @@ module controller import calculator_pkg::*;(
     input  logic [ADDR_W-1:0] write_start_addr,
     input  logic [ADDR_W-1:0] write_end_addr,
 
-  	// Control
-    output logic write,
-    output logic [ADDR_W-1:0] w_addr,
-    output logic [MEM_WORD_SIZE-1:0] w_data,
-	logic [ADDR_W-1:0] curr_waddr,
+  	// Writing Control
+    output logic write,							//flag, when 1 = write.
+    output logic [ADDR_W-1:0] w_addr,			//address to write data to
+    output logic [MEM_WORD_SIZE-1:0] w_data,	//the data thats being written
+	logic [ADDR_W-1:0] curr_waddr,				//internal counter
 
-    output logic read,
-    output logic [ADDR_W-1:0] r_addr,
-    input  logic [MEM_WORD_SIZE-1:0] r_data,
-	logic [ADDR_W-1:0] curr_raddr,
+	//Reading Controls
+    input  logic [MEM_WORD_SIZE-1:0] r_data,	//data thats being read
+	output logic read,							//flag, when 1 = read
+    output logic [ADDR_W-1:0] r_addr,			//address thats being read from
+	logic [ADDR_W-1:0] curr_raddr,				//internal counter
 
-  	// Buffer Control (1 = upper, 0, = lower)
-    output logic              buffer_control,
-  
-  	// These go into adder
-  	output logic [DATA_W-1:0]       op_a,
-    output logic [DATA_W-1:0]       op_b,
-  
-    input  logic [MEM_WORD_SIZE-1:0]       buff_result
-  
+	input  logic [MEM_WORD_SIZE-1:0] buff_result// the result thats being stored in the buffer and will be written to SRAM
+    output logic              buffer_control,	// Buffer Control (1 = upper, 0, = lower)
+
+  	output logic [DATA_W-1:0]       op_a,		//input into adder
+    output logic [DATA_W-1:0]       op_b,		//input into adder
 ); 
+
 	//TODO: Write your controller state machine as you see fit. 
 	//HINT: See "6.2 Two Always BLock FSM coding style" from refmaterials/1_fsm_in_systemVerilog.pdf
 	// This serves as a good starting point, but you might find it more intuitive to add more than two always blocks.
@@ -47,12 +50,12 @@ module controller import calculator_pkg::*;(
 			buffer_control <= 0;
 		end
 
-		if(state == S_IDLE) begin
+		if(state == S_IDLE) begin	
+			r_addr <= curr_raddr; 				//sets what address to pull data from
 			state <= next;
 		end
 
 		if (state == S_READ) begin
-				r_addr <= curr_raddr; 			//sets what address to pull data from
 				op_a <= r_data;					//assgines the data from the address to the adder input a
 				op_b <= r_data; 				//assgines the data from the address to the adder input b
 				curr_raddr <= curr_raddr + 1; 	//moves address forward
@@ -60,17 +63,17 @@ module controller import calculator_pkg::*;(
 		end
 
 		if(state == S_ADD) begin
+			w_addr <= curr_waddr;				//sets what address to write data to;
 			buffer_control <= ~buff_result;		//toggles buffer location
 			state <= next;
 		end
 
 		if(state == S_WRITE) begin
-			w_addr <= curr_waddr;				//sets what address to write data to;
+			
 			curr_waddr <= curr_waddr + 1;		//moves address forward
 			w_data <= buff_result;				//gets the data from the buffer to write in the SRAM
 			state <= next;
 		end
-	
 	end
 	
 	//Next state logic, outputs
@@ -119,5 +122,4 @@ module controller import calculator_pkg::*;(
 			S_END:	//nothing to be done, idle in state untill reset.	
 		endcase
 	end
-
 endmodule
