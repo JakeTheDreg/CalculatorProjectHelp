@@ -13,6 +13,12 @@ module top_lvl (
     input  logic [ADDR_W-1:0]    write_start_addr,
     input  logic [ADDR_W-1:0]    write_end_addr
 
+    
+
+    
+);
+
+    //Any wires, combinational assigns, etc should go at the top for visibility
     //controller wires
     logic write, 
     logic read;
@@ -22,16 +28,10 @@ module top_lvl (
     logic [MEM_WORD_SIZE-1:0] r_data;
     logic [DATA_W-1:0] op_a, 
     logic [DATA_W-1:0] op_b;
-    logic [MEM_WORD_SIZE-1:0] buff_result;
-
+    logic [MEM_WORD_SIZE-1:0] buff_result;  
     //SRAM wire
     logic wmask0 = 4'hF;
-    
-);
 
-    //Any wires, combinational assigns, etc should go at the top for visibility
-
-    
     //TODO: Finish instantiation of your controller module
 	controller u_ctrl (
   //inputs
@@ -75,14 +75,14 @@ module top_lvl (
   	
       sky130_sram_2kbyte_1rw1r_32x512_8 sram_A (
         .clk0   (clk),  
-        .csb0   (~(read | write)),
-        .web0   (~write), 
+        .csb0   ((read | write)),
+        .web0   (write), 
         .wmask0 (wmask0), 
         .addr0  (w_addr), //maybe r_addr 
         .din0   (w_data),
         .dout0  (), //leave blank
         .clk1   (clk), 
-        .csb1   (~read), 
+        .csb1   (read), 
         .addr1  (r_addr), 
         .dout1  (r_data) 
     );
@@ -91,14 +91,14 @@ module top_lvl (
     //TODO: Instantiate the second SRAM for the lower half of the memory.
     sky130_sram_2kbyte_1rw1r_32x512_8 sram_B (
         .clk0   (clk),  
-        .csb0   (~(read | write)),
-        .web0   (~write), 
+        .csb0   ((read | write)),
+        .web0   (write), 
         .wmask0 (wmask0), 
         .addr0  (w_addr), //maybe r_addr 
         .din0   (w_data),
         .dout0  (), //leave blank
         .clk1   (clk), 
-        .csb1   (~read), 
+        .csb1   (read), 
         .addr1  (r_addr), 
         .dout1  (r_data) 
     );

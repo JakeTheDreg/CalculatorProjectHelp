@@ -1,10 +1,13 @@
 /*
-* this contoller module controlls the flow of the FSM giving instructions based on the state the machine is in. 
+* this contoller module controlls the flow of the FSM giving instructions based on the current_state the machine is in. 
 * gives an overview of the function of the machine.
 */
 import calculator_pkg::*;
 module controller (
-  	input  logic              clk_i,
+  	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////		Variables
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	input  logic              clk_i,
     input  logic              rst_i,
   
   	// Memory Access
@@ -14,17 +17,15 @@ module controller (
     input  logic [ADDR_W-1:0] write_end_addr,
 
   	// Writing Control
-    output logic write,							//flag, when 1 = write.
+    output logic write,							//flag, when 0 = write.
     output logic [ADDR_W-1:0] w_addr,			//address to write data to
     output logic [MEM_WORD_SIZE-1:0] w_data,	//the data thats being written
-	logic [ADDR_W-1:0] curr_waddr,				//internal counter
 
 	//Reading Controls
     input  logic [MEM_WORD_SIZE-1:0] r_data,	//data thats being read
-	output logic read,							//flag, when 1 = read
+	output logic read,							//flag, when 0 = read
     output logic [ADDR_W-1:0] r_addr,			//address thats being read from
-	logic [ADDR_W-1:0] curr_raddr,				//internal counter
-
+	
 	input  logic [MEM_WORD_SIZE-1:0] buff_result// the result thats being stored in the buffer and will be written to SRAM
     output logic              buffer_control,	// Buffer Control (1 = upper, 0, = lower)
 
@@ -32,94 +33,90 @@ module controller (
     output logic [DATA_W-1:0]       op_b,		//input into adder
 ); 
 
-	//TODO: Write your controller state machine as you see fit. 
+	//TODO: Write your controller current_state machine as you see fit. 
 	//HINT: See "6.2 Two Always BLock FSM coding style" from refmaterials/1_fsm_in_systemVerilog.pdf
 	// This serves as a good starting point, but you might find it more intuitive to add more than two always blocks.
 
-	typedef enum logic [2:0] {S_IDLE,S_READ,S_ADD,S_WRITE,S_END} state_t;
-  	state_t state, next;
-
-	//State reg, other registers as needed
+	typedef enum logic [2:0] {S_IDLE,S_READ,S_ADD,S_WRITE,S_END} current_state_t;
+  	current_state_t current_state, next_state;
+	logic [ADDR_W-1:0] curr_raddr,				//internal counter
+	logic [ADDR_W-1:0] curr_waddr,				//internal counter
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////// current_State Machine
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	always_ff @(posedge clk_i) begin
 		if (rst_i) begin
-			state <= S_IDLE;
+			current_state <= S_IDLE;
+		end else begin
+			current_state = next_state;
+		end
+	end
+
+	always_comb begin
+		cases (current_state)
+			S_IDLE:		next_state = S_READ;
+			S_READ:		next_state = S_ADD;
+			S_ADD:		next_state = (buffer_control == 1) ? S_WRITE : S_READ;
+			S_WRITE:	next_state = (curr_waddr == write_end_addr) ? S_END : S_READ;
+			S_END:		next_state = S_END;
+	end
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////// Registers
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//curr_radder register
+	always_ff @(posedge clk_i) begin
+		if (current_state == S_IDLE) begin
 			curr_raddr <= read_start_addr;
-			curr_waddr <= write_start_addr;
-			op_a         <= '0;
-    		op_b         <= '0;
-			buffer_control <= 0;
-		end
-
-		if(state == S_IDLE) begin	
-			r_addr <= curr_raddr; 				//sets what address to pull data from
-			state <= next;
-		end
-
-		if (state == S_READ) begin
-				op_a <= r_data;					//assgines the data from the address to the adder input a
-				op_b <= r_data; 				//assgines the data from the address to the adder input b
-				curr_raddr <= curr_raddr + 1; 	//moves address forward
-				state <= next;
-		end
-
-		if(state == S_ADD) begin
-			w_addr <= curr_waddr;				//sets what address to write data to;
-			buffer_control <= ~buff_result;		//toggles buffer location
-			state <= next;
-		end
-
-		if(state == S_WRITE) begin
 			
-			curr_waddr <= curr_waddr + 1;		//moves address forward
-			w_data <= buff_result;				//gets the data from the buffer to write in the SRAM
-			state <= next;
+		end else if (current_state == S_READ) begin
+			curr_raddr <= curr_raddr + 1; 	//moves address forward
+		end
+	end 
+
+	//curr_wadder register
+	always_ff @(posedge clk_i) begin
+		if(current_state == S_IDLE) begin	
+			curr_waddr <= write_start_addr;
+		end
+	end
+
+	//buffer control register
+	always_ff @(posedge clk_i) begin
+		buffer_control <= 0;
+			if (current_state == S_ADD) begin
+				buffer_control <= ~buff_control;
+		end
+	end
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//// comb blocks
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	assign r_addr = curr_raddr;
+	assign w_addr = curr_waddr;
+	assign read = 1;
+	assign write = 1;
+	assign w_data = buffer_o;
+	assign current_state = next_state;
+
+	always_comb begin
+		if (current_state == S_add)begin
+				op_a = [DATA_W-1:32]r_data;						//assgines the data from the address to the adder input a
+				op_b = [31:0]		r_data; 					//assgines the data from the address to the adder input b
 		end
 	end
 	
-	//Next state logic, outputs
+	//read enable
 	always_comb begin
+        read = ~(state == S_READ);		//when current_state == S_READ it sets it to 0 which enables reading
+    end
 
-		//defaut outputs to avoid latches
-		read   = 0;
-	  	r_addr = curr_raddr;
-  		write  = 0;
-	  	w_addr = curr_waddr;
-  		w_data = buffer_o;  
-	  	next   = state;
+    // Write enable
+    always_comb begin
+        write = ~(state == S_WRITE);	//when current_state == S_WRITE it sets it to 0 which enables writing
+    end
 
-		case (state)
-			//after one cycle moves to read
-			S_IDLE: begin 
-				next = S_READ;
-			end
+	//Next_state current_state logic, outputs
 
-			S_READ: begin //asserts read signal and provides the address to memory
-				read = 1; //tells it to read
-				
-				if(curr_raddr == read_end_addr)begin //stops from moving to next state untill all 32 bits are assigned.
-					next = S_ADD;	//always exits to S_ADD
-				end else 
-					next = S_READ;	//continues if all 32 bits are not assigned.
-			end
-
-			S_ADD:  begin //The state is where the two operands are provided to the external adder module and the 32-bit result is stored in the result buffer; buffer writes to lower first then does S_READ and S_ADDER again, and then writes that to top then moves to S_WRITE
-					if(buffer_control == 1)//filled the result buffer, transition to WRITE
-						next = S_WRITE;
-					else 
-						next = S_READ; //if writing to the lower half, transition to READ
-			end
-
-			S_WRITE:begin //The state writes the calculated result back into memory. The controller asserts the write signal and provides the address and data.
-				write = 1; //tells it to write
-				
-				if (curr_waddr == write_end_addr) begin//if it has not finished adding from the range of addresses, then it exits to READ
-					next = S_END;
-				end else begin
-					next = S_READ;
-				end				
-			end
-
-			S_END:	//nothing to be done, idle in state untill reset.	
-		endcase
-	end
 endmodule
