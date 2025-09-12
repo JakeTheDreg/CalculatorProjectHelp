@@ -19,15 +19,17 @@ module controller (
   	// Writing Control
     output logic write,							//flag, when 0 = write.
     output logic [ADDR_W-1:0] w_addr,			//address to write data to
-    output logic [MEM_WORD_SIZE-1:0] w_data,	//the data thats being written
+    output logic [MEM_WORD_SIZE-1:32] w_data_a, //the data thats being written to sram a
+    output logic [31:0] w_data_b,				//the data thats being written to sram b
 
 	//Reading Controls
-    input  logic [MEM_WORD_SIZE-1:0] r_data,	//data thats being read
+    input  logic [MEM_WORD_SIZE-1:32] r_data_a,	//data thats being read from sram a
+	input  logic [31:0] 			  r_data_b,	//data thats being read from sram b
 	output logic read,							//flag, when 0 = read
     output logic [ADDR_W-1:0] r_addr,			//address thats being read from
 	
 	input  logic [MEM_WORD_SIZE-1:0] buff_result,// the result thats being stored in the buffer and will be written to SRAM
-    output logic              buffer_control,	 // Buffer Control (1 = upper, 0, = lower)
+    output logic              		 buffer_control,	 // Buffer Control (1 = upper, 0, = lower)
 
   	output logic [DATA_W-1:0]       op_a,		//input into adder
     output logic [DATA_W-1:0]       op_b		//input into adder
@@ -68,26 +70,36 @@ module controller (
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//curr_radder register
 	always_ff @(posedge clk_i) begin
-		if (state == S_IDLE) begin
-			curr_raddr <= read_start_addr;
-			
-		end else if (state == S_READ) begin
-			curr_raddr <= curr_raddr + 1; 	//moves address forward
+		if (rst_i) begin 
+			curr_raddr <= 'b0;
+		end else begin
+			if (state == S_IDLE) begin
+				curr_raddr <= read_start_addr;
+			end else if (state == S_READ) begin
+				curr_raddr <= curr_raddr + 1; 	//moves address forward
+			end
 		end
 	end 
 
 	//curr_wadder register
 	always_ff @(posedge clk_i) begin
-		if(state == S_IDLE) begin	
-			curr_waddr <= write_start_addr;
+		if (rst_i) begin 
+			curr_waddr <= 'b0;
+		end else begin
+			if(state == S_IDLE) begin	
+				curr_waddr <= write_start_addr;
+			end
 		end
 	end
 
 	//buffer control register
 	always_ff @(posedge clk_i) begin
-		buffer_control <= 0;
+		if (rst_i) begin 
+			buffer_control <= 'b0;
+		end else begin
 			if (state == S_ADD) begin
 				buffer_control <= ~buffer_control;
+			end
 		end
 	end
 
@@ -96,15 +108,16 @@ module controller (
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	assign r_addr = curr_raddr;
 	assign w_addr = curr_waddr;
-	assign read = 1;
-	assign write = 1;
-	assign w_data = buff_result;
-	assign state = next;
+	assign w_data_a = buff_result [MEM_WORD_SIZE - 1: 0];
+	assign w_data_b = buff_result [31:0];
 
 	always_comb begin
 		if (state == S_ADD)begin
-				op_a = r_data[DATA_W-1:32];						//assgines the data from the address to the adder input a
-				op_b = r_data[31:0]; 					//assgines the data from the address to the adder input b
+			op_a = r_data_a;						//assgines the data from the address to the adder input a
+			op_b = r_data_b; 					//assgines the data from the address to the adder input b
+		end else begin
+			op_a = 0;
+			op_b = 0;
 		end
 	end
 	

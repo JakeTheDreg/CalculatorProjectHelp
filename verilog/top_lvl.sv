@@ -22,39 +22,43 @@ module top_lvl (
     logic [ADDR_W-1:0] w_addr;
     logic [ADDR_W-1:0] r_addr;
 
-    logic [MEM_WORD_SIZE-1:0] w_data; 
-    logic [MEM_WORD_SIZE-1:0] r_data;
+    logic [MEM_WORD_SIZE-1:32] w_data_a; 
+    logic [31:0] w_data_b;
+    logic [MEM_WORD_SIZE-1:32] r_data_a;
+    logic [31:0] r_data_b;
 
     logic [DATA_W-1:0] op_a; 
     logic [DATA_W-1:0] op_b;
     logic [DATA_W-1:0] sum_o;
 
     logic [MEM_WORD_SIZE-1:0] buff_result; 
-
+    logic buffer_control;
     //SRAM wire
-    logic wmask0 = 4'hF;
+    logic [3:0] wmask0 = 4'hF;
 
     //TODO: Finish instantiation of your controller module
 	controller u_ctrl (
-  //inputs
-  .clk_i(clk),
-  .rst_i(rst),
-  .read_start_addr(read_start_addr),
-  .read_end_addr(read_end_addr),
-  .write_start_addr(write_start_addr),
-  .write_end_addr(write_end_addr),
-  .r_data(r_data),
-  .buff_result(buff_result),
+    //inputs
+    .clk_i            (clk),
+    .rst_i            (rst),
+    .read_start_addr  (read_start_addr),
+    .read_end_addr    (read_end_addr),
+    .write_start_addr (write_start_addr),
+    .write_end_addr    (write_end_addr),
+    .r_data_a         (r_data_a),
+    .r_data_b         (r_data_b),
+    .buff_result      (buff_result),
 
-  //outputs
-  .write(write),
-  .read(read),
-  .w_addr(w_addr),
-  .w_data(w_data),
-  .r_addr(r_addr),
-  .buffer_control(buffer_control),  //1 = upper, 0= lower
-  .op_a(op_a),
-  .op_b(op_b)
+    //outputs
+    .write          (write),
+    .read           (read),
+    .w_addr         (w_addr),
+    .w_data_a       (w_data_a),  
+    .w_data_b       (w_data_b),
+    .r_addr         (r_addr),
+    .buffer_control (buffer_control),  //1 = upper, 0= lower
+    .op_a           (op_a),
+    .op_b           (op_b)
   );
 
     //TODO: Look at the sky130_sram_2kbyte_1rw1r_32x512_8 module and instantiate it using variables defined above.
@@ -80,13 +84,13 @@ module top_lvl (
         .csb0   ((read | write)),
         .web0   (write), 
         .wmask0 (wmask0), 
-        .addr0  (w_addr), //maybe r_addr 
-        .din0   (w_data),
+        .addr0  (w_addr), 
+        .din0   (w_data_a),
         .dout0  (), //leave blank
         .clk1   (clk), 
         .csb1   (read), 
         .addr1  (r_addr), 
-        .dout1  (r_data) 
+        .dout1  (r_data_a) 
     );
 
   
@@ -97,27 +101,27 @@ module top_lvl (
         .web0   (write), 
         .wmask0 (wmask0), 
         .addr0  (w_addr), //maybe r_addr 
-        .din0   (w_data),
+        .din0   (w_data_b),
         .dout0  (), //leave blank
         .clk1   (clk), 
         .csb1   (read), 
         .addr1  (r_addr), 
-        .dout1  (r_data) 
+        .dout1  (r_data_b) 
     );
   	
   	//TODO: Finish instantiation of your adder module
     adder32 u_adder (
-      .a_i(op_a), //input from srama
-      .b_i(op_b), //input from sramb
-      .sum_o(sum_o) //output to buffer
+      .a_i      (op_a), //input from srama
+      .b_i      (op_b), //input from sramb
+      .sum_o    (sum_o) //output to buffer
     );
  
     //TODO: Finish instantiation of your result buffer
     result_buffer u_resbuf (
-      .clk_i(clk),
-      .rst_i(rst),
-      .result_i(sum_o), //input from adder
-      .loc_sel(buffer_control),  //input
-      .buffer_o(w_data)  //output to sram
+      .clk_i    (clk),
+      .rst_i    (rst),
+      .result_i (sum_o), //input from adder
+      .loc_sel  (buffer_control),  //input
+      .buffer_o (buff_result)  //output to sram
     );
 endmodule
