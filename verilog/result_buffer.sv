@@ -31,5 +31,4 @@ module result_buffer  (
             //Place result_i into buffer based on loc_sel
         end
     end
-
 endmodule

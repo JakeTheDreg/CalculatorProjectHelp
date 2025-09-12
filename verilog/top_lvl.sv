@@ -11,24 +11,26 @@ module top_lvl (
     input  logic [ADDR_W-1:0]    read_start_addr,
     input  logic [ADDR_W-1:0]    read_end_addr,
     input  logic [ADDR_W-1:0]    write_start_addr,
-    input  logic [ADDR_W-1:0]    write_end_addr
-
-    
-
-    
+    input  logic [ADDR_W-1:0]    write_end_addr  
 );
 
     //Any wires, combinational assigns, etc should go at the top for visibility
     //controller wires
-    logic write, 
+    logic write; 
     logic read;
-    logic [ADDR_W-1:0] w_addr, 
+
+    logic [ADDR_W-1:0] w_addr;
     logic [ADDR_W-1:0] r_addr;
-    logic [MEM_WORD_SIZE-1:0] w_data, 
+
+    logic [MEM_WORD_SIZE-1:0] w_data; 
     logic [MEM_WORD_SIZE-1:0] r_data;
-    logic [DATA_W-1:0] op_a, 
+
+    logic [DATA_W-1:0] op_a; 
     logic [DATA_W-1:0] op_b;
-    logic [MEM_WORD_SIZE-1:0] buff_result;  
+    logic [DATA_W-1:0] sum_o;
+
+    logic [MEM_WORD_SIZE-1:0] buff_result; 
+
     //SRAM wire
     logic wmask0 = 4'hF;
 
@@ -46,13 +48,13 @@ module top_lvl (
 
   //outputs
   .write(write),
+  .read(read),
   .w_addr(w_addr),
-  .w_data(w.data),
+  .w_data(w_data),
+  .r_addr(r_addr),
   .buffer_control(buffer_control),  //1 = upper, 0= lower
   .op_a(op_a),
-  .op_b(op_b),
-
-
+  .op_b(op_b)
   );
 
     //TODO: Look at the sky130_sram_2kbyte_1rw1r_32x512_8 module and instantiate it using variables defined above.
@@ -112,11 +114,10 @@ module top_lvl (
  
     //TODO: Finish instantiation of your result buffer
     result_buffer u_resbuf (
-      .clk0(clk),
-      
+      .clk_i(clk),
+      .rst_i(rst),
       .result_i(sum_o), //input from adder
       .loc_sel(buffer_control),  //input
       .buffer_o(w_data)  //output to sram
     );
-
 endmodule
