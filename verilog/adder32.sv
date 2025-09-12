@@ -15,11 +15,11 @@ module adder32 (
 
     genvar i;
     generate
-        for (i = 0; i <  32; i = i + 1) begin
+        for (i = 0; i <  DATA_W; i = i + 1) begin : gen_adders_block
 	        full_adder fa_inst (
                 .a      (a_i[i]),
                 .b      (b_i[i]),
-                .cin    (i == 0 ? 1'b0 : c[i-1]),
+                .cin    (c[i]),
                 .s      (sum_o[i]),
                 .cout   (c[i+1])
             );

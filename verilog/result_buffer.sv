@@ -24,11 +24,13 @@ module result_buffer  (
             internal_buffer <= 0;
         end else begin
             if (loc_sel) begin
-                buffer_o[MEM_WORD_SIZE - 1 : 32] <= result_i;
+                internal_buffer[MEM_WORD_SIZE - 1 : 32] <= {result_i, internal_buffer[31:0]};
             end else begin
-                buffer_o[31 : 0] <= result_i;
+                internal_buffer[31 : 0] <= {internal_buffer[MEM_WORD_SIZE-1:32], result_i};
             end
             //Place result_i into buffer based on loc_sel
         end
     end
+	 
+	 assign buffer_o = internal_buffer;
 endmodule
