@@ -11,7 +11,7 @@ module result_buffer  (
     
     input logic [DATA_W-1 : 0] result_i,       //result from ALU
     input logic loc_sel,                            //mux control signal
-
+    input logic buffer_write,
     output logic [MEM_WORD_SIZE-1 : 0] buffer_o   //64-bit output of buffer
 );
 
@@ -22,15 +22,15 @@ module result_buffer  (
     always_ff @(posedge clk_i) begin
         if (rst_i) begin
             internal_buffer <= 0;
-        end else begin
+        end else if (!buffer_write)begin
             if (loc_sel) begin
-                internal_buffer <= {result_i, internal_buffer[31:0]};
+                internal_buffer[MEM_WORD_SIZE-1:32] <= {result_i, internal_buffer[31:0]};
             end else begin
-                internal_buffer <= {internal_buffer[MEM_WORD_SIZE-1:32], result_i};
+                internal_buffer[31:0] <= {internal_buffer[MEM_WORD_SIZE-1:32], result_i};
             end
             //Place result_i into buffer based on loc_sel
         end
     end
 	 
-	 assign buffer_o = internal_buffer;
+	assign buffer_o = internal_buffer;
 endmodule

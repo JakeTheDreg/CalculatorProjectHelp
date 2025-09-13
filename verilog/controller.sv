@@ -17,10 +17,11 @@ module controller (
     input  logic [ADDR_W-1:0] write_end_addr,
 
   	// Writing Control
-    output logic write,							//flag, when 0 = write.
+    output logic write,							//flag, when 0 = write to SRAM.
     output logic [ADDR_W-1:0] w_addr,			//address to write data to
     output logic [MEM_WORD_SIZE-1:32] w_data_a, //the data thats being written to sram a
     output logic [31:0] w_data_b,				//the data thats being written to sram b
+	output logic buffer_write,					//flag, when 0 = write to buffer.
 
 	//Reading Controls
     input  logic [MEM_WORD_SIZE-1:32] r_data_a,	//data thats being read from sram a
@@ -88,6 +89,8 @@ module controller (
 		end else begin
 			if(state == S_IDLE) begin	
 				curr_waddr <= write_start_addr;
+			end else if (state == S_WRITE) begin
+				curr_waddr <= curr_waddr + 1;
 			end
 		end
 	end
@@ -95,7 +98,7 @@ module controller (
 	//buffer control register
 	always_ff @(posedge clk_i) begin
 		if (rst_i) begin 
-			buffer_control <= 'b0;
+			buffer_control <= 'b1;
 		end else begin
 			if (state == S_ADD) begin
 				buffer_control <= ~buffer_control;
@@ -108,7 +111,7 @@ module controller (
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	assign r_addr = curr_raddr;
 	assign w_addr = curr_waddr;
-	assign w_data_a = buff_result [MEM_WORD_SIZE - 1: 0];
+	assign w_data_a = buff_result [MEM_WORD_SIZE - 1: 32];
 	assign w_data_b = buff_result [31:0];
 
 	always_comb begin
@@ -123,11 +126,16 @@ module controller (
 	
 	//read enable
 	always_comb begin
-        read = ~(state == S_READ);		//when state == S_READ it sets it to 0 which enables reading
+        read = !(state == S_READ);		//when state == S_READ it sets it to 0 which enables reading
     end
 
-    // Write enable
+    //Write enable for SRAM
     always_comb begin
-        write = ~(state == S_WRITE);	//when state == S_WRITE it sets it to 0 which enables writing
+        write = !(state == S_WRITE);	//when state == S_WRITE it sets it to 0 which enables writing
+    end
+
+	//Write enable for result_buffer
+	always_comb begin
+        buffer_write = !(state == S_ADD);	//when state == S_WRITE it sets it to 0 which enables writing
     end
 endmodule
