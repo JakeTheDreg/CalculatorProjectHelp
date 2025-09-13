@@ -1,7 +1,8 @@
 /*
 * Module describing a 32-bit ripple carry adder, with no carry output or input
 */
-module adder32 import calculator_pkg::*; (
+import calculator_pkg::*;
+module adder32 (
     input logic [DATA_W - 1 : 0] a_i,
     input logic [DATA_W - 1 : 0] b_i,
     output logic [DATA_W - 1 : 0] sum_o
@@ -9,13 +10,19 @@ module adder32 import calculator_pkg::*; (
 
     //TODO: use a generate block to chain together 32 full adders. 
     // Imagine you are connecting 32 single-bit adder modules together. 
-    
-    //this generates 32 full adders with the assigned bit of i. 
+    logic [DATA_W:0] c; 
+    assign c[0] = 1'b0; 
+
     genvar i;
     generate
-        for (i = 0 ; i < 31; i= + 1) begin
-            full_adder (a_i[i], b_i[i], sum_o[i])
-        end
+        for (i = 0; i <  DATA_W; i = i + 1) begin : gen_adders_block
+	        full_adder fa_inst (
+                .a      (a_i[i]),
+                .b      (b_i[i]),
+                .cin    (c[i]),
+                .s      (sum_o[i]),
+                .cout   (c[i+1])
+            );
+	    end 
     endgenerate
-
 endmodule
