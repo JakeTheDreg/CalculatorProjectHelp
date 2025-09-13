@@ -19,13 +19,13 @@ module controller (
   	// Writing Control
     output logic write,							//flag, when 0 = write to SRAM.
     output logic [ADDR_W-1:0] w_addr,			//address to write data to
-    output logic [MEM_WORD_SIZE-1:32] w_data_a, //the data thats being written to sram a
+    output logic [31:0] w_data_a, //the data thats being written to sram a
     output logic [31:0] w_data_b,				//the data thats being written to sram b
 	output logic buffer_write,					//flag, when 0 = write to buffer.
 
 	//Reading Controls
-    input  logic [MEM_WORD_SIZE-1:32] r_data_a,	//data thats being read from sram a
-	input  logic [31:0] 			  r_data_b,	//data thats being read from sram b
+    input  logic [31:0] r_data_a,	//data thats being read from sram a
+	input  logic [31:0] r_data_b,	//data thats being read from sram b
 	output logic read,							//flag, when 0 = read
     output logic [ADDR_W-1:0] r_addr,			//address thats being read from
 	
@@ -98,7 +98,7 @@ module controller (
 	//buffer control register
 	always_ff @(posedge clk_i) begin
 		if (rst_i) begin 
-			buffer_control <= 'b1;
+			buffer_control <= 'b0;
 		end else begin
 			if (state == S_ADD) begin
 				buffer_control <= ~buffer_control;

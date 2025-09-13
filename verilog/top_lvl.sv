@@ -23,9 +23,9 @@ module top_lvl (
     logic [ADDR_W-1:0] w_addr;
     logic [ADDR_W-1:0] r_addr;
 
-    logic [MEM_WORD_SIZE-1:32] w_data_a; 
+    logic [31:0] w_data_a; 
     logic [31:0] w_data_b;
-    logic [MEM_WORD_SIZE-1:32] r_data_a;
+    logic [31:0] r_data_a;
     logic [31:0] r_data_b;
 
     logic [DATA_W-1:0] op_a; 
