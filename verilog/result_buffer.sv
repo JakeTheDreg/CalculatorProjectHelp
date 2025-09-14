@@ -25,9 +25,9 @@ module result_buffer  (
         end else if (!buffer_write)begin
             //Place result_i into buffer based on loc_sel
             if (loc_sel) begin
-                internal_buffer <= {internal_buffer[MEM_WORD_SIZE-1:32], result_i};
-            end else begin
                 internal_buffer <= {result_i, internal_buffer[31:0]};
+            end else begin
+                internal_buffer <= {internal_buffer[MEM_WORD_SIZE-1:32], result_i};
             end
         end
     end
