@@ -4,12 +4,14 @@
 * 
 * synchronous active high reset on posedge clk
 */
-module result_buffer import calculator_pkg::*; (
+import calculator_pkg::*;
+module result_buffer  (
     input logic clk_i,                              //clock signal
     input logic rst_i,                              //reset signal
-
+    
     input logic [DATA_W-1 : 0] result_i,       //result from ALU
     input logic loc_sel,                            //mux control signal
+    input logic buffer_write,
     output logic [MEM_WORD_SIZE-1 : 0] buffer_o   //64-bit output of buffer
 );
 
@@ -20,14 +22,15 @@ module result_buffer import calculator_pkg::*; (
     always_ff @(posedge clk_i) begin
         if (rst_i) begin
             internal_buffer <= 0;
-        end else begin
-            if (loc_sel) begin
-                [MEM_WORD_SIZE - 1 : 32]buffer_o <= result_i;
-            end else begin
-                [31 : 0]buffer_o <= result_i;
-            end
+        end else if (!buffer_write)begin
             //Place result_i into buffer based on loc_sel
+            if (loc_sel) begin
+                internal_buffer <= {internal_buffer[MEM_WORD_SIZE-1:32], result_i};
+            end else begin
+                internal_buffer <= {result_i, internal_buffer[31:0]};
+            end
         end
     end
-
+	 
+	assign buffer_o = internal_buffer;
 endmodule
