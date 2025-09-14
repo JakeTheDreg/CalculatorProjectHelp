@@ -102,7 +102,7 @@ module top_lvl (
         .csb0   (1'b0),
         .web0   (write), 
         .wmask0 (wmask0), 
-        .addr0  (w_addr), //maybe r_addr 
+        .addr0  (w_addr), 
         .din0   (w_data_b),
         .dout0  (), //leave blank
         .clk1   (clk), 

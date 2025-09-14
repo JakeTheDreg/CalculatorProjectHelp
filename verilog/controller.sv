@@ -52,7 +52,7 @@ module controller (
 		if (rst_i) begin
 			state <= S_IDLE;
 		end else begin
-			state = next;
+			state <= next;
 		end
 	end
 
