@@ -19,7 +19,7 @@ module controller (
   	// Writing Control
     output logic write,							//flag, when 0 = write to SRAM.
     output logic [ADDR_W-1:0] w_addr,			//address to write data to
-    output logic [31:0] w_data_a, //the data thats being written to sram a
+    output logic [31:0] w_data_a, 				//the data thats being written to sram a
     output logic [31:0] w_data_b,				//the data thats being written to sram b
 	output logic buffer_write,					//flag, when 0 = write to buffer.
 
@@ -29,8 +29,8 @@ module controller (
 	output logic read,							//flag, when 0 = read
     output logic [ADDR_W-1:0] r_addr,			//address thats being read from
 	
-	input  logic [MEM_WORD_SIZE-1:0] buff_result,// the result thats being stored in the buffer and will be written to SRAM
-    output logic              		 buffer_control,	 // Buffer Control (1 = upper, 0, = lower)
+	input  logic [MEM_WORD_SIZE-1:0] buff_result,		// the result thats being stored in the buffer and will be written to SRAM
+    output logic              		 buffer_control,	// Buffer Control (1 = upper, 0, = lower)
 
   	output logic [DATA_W-1:0]       op_a,		//input into adder
     output logic [DATA_W-1:0]       op_b		//input into adder
@@ -111,12 +111,12 @@ module controller (
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	assign r_addr = curr_raddr;
 	assign w_addr = curr_waddr;
-	assign w_data_a = buff_result [MEM_WORD_SIZE - 1: 32];
-	assign w_data_b = buff_result [31:0];
+	assign w_data_a = buff_result [31:0];
+	assign w_data_b = buff_result [MEM_WORD_SIZE - 1: 32];
 
 	always_comb begin
 		if (state == S_ADD)begin
-			op_a = r_data_a;						//assgines the data from the address to the adder input a
+			op_a = r_data_a;					//assgines the data from the address to the adder input a
 			op_b = r_data_b; 					//assgines the data from the address to the adder input b
 		end else begin
 			op_a = 0;
